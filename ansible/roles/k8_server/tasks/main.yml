@@ -1,0 +1,96 @@
+- name: Disable SWAP since kubernetes can't work with swap enabled (1/2)
+  become: yes
+  shell: |
+    /usr/sbin/swapoff -a
+- name: Disable SWAP in fstab since kubernetes can't work with swap enabled (2/2)
+  become: yes
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+- name: Add containerd modules on load
+  become: yes
+  copy:
+    src: /etc/ansible/res/k8_server/containerd.conf
+    dest: /etc/modules-load.d/containerd.conf
+- name: Add containerd sysctl parameters
+  become: yes
+  copy:
+    src: /etc/ansible/res/k8_server/99-kubernetes-cri.conf
+    dest: /etc/sysctl.d/99-kubernetes-cri.conf
+- name: Ensure etc directory exists
+  become: yes
+  file:
+    path: /var/lib/etcd
+    state: directory
+- name: Check if br_netfilter is loaded
+  become: yes
+  shell: 
+    cmd: 'lsmod | grep -w br_netfilter'
+  register: br_netfilter_loaded
+  changed_when: false
+  failed_when: "br_netfilter_loaded.rc == 2"
+- name: Check if overlay is loaded
+  become: yes
+  shell: 
+    cmd: 'lsmod | grep -w overlay'
+  register: overlay_loaded
+  changed_when: false
+  failed_when: "overlay_loaded.rc == 2"
+- name: Load br_netfilter module
+  become: yes
+  command: modprobe br_netfilter
+  when: br_netfilter_loaded.rc != 0
+- name: Load overlay module
+  become: yes
+  command: modprobe overlay
+  when: overlay_loaded.rc != 0
+- name: Add Kubernetes GPG key to keyring
+  become: yes
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+- name: Add Kubernetes repo
+  become: yes
+  apt_repository:
+    repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+    state: present
+    update_cache: yes
+- name: Install Kubernetes
+  become: yes
+  package:
+    name:
+      - nfs-common
+      - containerd.io
+      - kubeadm=1.27.2-00
+      - kubectl=1.27.2-00
+      - kubelet=1.27.2-00
+    state: present
+    update_cache: yes
+- name: Add containerd config.toml
+  become: yes
+  copy:
+    src: /etc/ansible/res/k8_server/config.toml
+    dest: /etc/containerd/config.toml
+- name: Hold kubeadm
+  become: yes
+  dpkg_selections:
+    name: kubeadm
+    selection: hold
+- name: Hold kubectl
+  become: yes
+  dpkg_selections:
+    name: kubectl
+    selection: hold
+- name: Hold kubelet
+  become: yes
+  dpkg_selections:
+    name: kubelet
+    selection: hold
+- name: Start containerd service
+  become: yes
+  systemd:
+    daemon_reload: true
+    enabled: true
+    state: started
+    name: containerd.service

@@ -1,0 +1,4 @@
+- hosts: gns3
+  roles:
+    - common
+    - gns_server

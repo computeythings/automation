@@ -1,0 +1,13 @@
+[k8s:vars]
+ansible_ssh_user=ansible
+ansible_ssh_private_key_file=/etc/ansible/keys/id_rsa
+[k8s]
+10.81.20.2
+10.81.20.3
+10.81.20.4
+[gns3:vars]
+ansible_ssh_user=ansible
+ansible_ssh_private_key_file=/etc/ansible/keys/id_rsa
+[gns3]
+10.81.20.9
+10.81.20.10
