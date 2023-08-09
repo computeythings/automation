@@ -1,0 +1,188 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: dns
+    service: sysutil
+    role: dns
+  name: dns
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dns
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: dns
+        service: sysutil
+        role: dns
+    spec:
+      securityContext:
+        sysctls:
+        - name: net.ipv4.ip_unprivileged_port_start
+          value: "53"
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: powerdns-longhorn
+      containers:
+      - image: powerdns/pdns-recursor-master
+        name: pdns-recursor-master
+        resources: {}
+        env:
+        - name: PDNS_RECURSOR_API_KEY
+          value: "test123"
+        - name: SQLALCHEMY_DATABASE_URI
+          value: "postgresql://pdns_admin:MuffinSquirrel@postgres.default.svc.cluster.local:5432/pdnstest"
+        volumeMounts:
+          - name: config
+            mountPath: "/etc/powerdns"
+      - image: powerdns/pdns-auth-master
+        name: pdns-auth-master
+        resources: {}
+        env:
+        - name: PDNS_AUTH_API_KEY
+          value: "test123"
+        - name: SQLALCHEMY_DATABASE_URI
+          value: "postgresql://pdns_admin:MuffinSquirrel@postgres.default.svc.cluster.local:5432/pdnstest"
+        volumeMounts:
+          - name: config
+            mountPath: "/etc/powerdns"
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: dns
+    service: sysutil
+    role: dns
+  name: dns
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.81.4.3
+  externalTrafficPolicy: Local
+  ports:
+  - name: dns
+    port: 53
+    protocol: UDP
+    targetPort: 53
+  - name: zonetransfer
+    port: 53
+    protocol: TCP
+    targetPort: 5300
+  - name: prometheus
+    port: 9153
+    protocol: TCP
+    targetPort: 9153
+  - name: api
+    port: 8081
+    protocol: TCP
+    targetPort: 8081
+  selector:
+    app: dns
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: dns-admin
+    service: sysutil
+    role: dns
+  name: dns-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dns-admin
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: dns-admin
+        service: sysutil
+        role: dns
+    spec:
+      containers:
+      - image: powerdnsadmin/pda-legacy:latest
+        name: powerdns-admin
+        resources: {}
+        env:
+        - name: SECRET_KEY
+          value: "pJaSMCjEaaJ8PycejdCEjcE4QLq3iDluPtHsQFlQKnrvlVjCJIVIU1"
+        - name: SQLALCHEMY_DATABASE_URI
+          value: "postgresql://pdns_admin:MuffinSquirrel@postgres.default.svc.cluster.local:5432/pdns_admin"
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: dns-admin
+    service: sysutil
+    role: dns
+  name: dns-admin
+spec:
+  ports:
+  - name: web
+    port: 80
+    protocol: TCP
+  selector:
+    app: dns-admin
+status:
+  loadBalancer: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dns-ingress
+spec:
+  rules:
+  - host: dns.k8s.jnet.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dns-admin
+            port:
+              name: web
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dns
+  labels:  
+    app: dns
+    service: sysutil
+spec:
+  schedule: "0 0 1 * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          volumes:
+          - name: config
+            persistentVolumeClaim:
+              claimName: powerdns-longhorn
+          containers:
+          - name: update-blocklist
+            image: alpine:latest
+            command: ["/bin/sh"]
+            args: ["-c","wget https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts -O /config/hosts"] 
+            volumeMounts:
+            - name: config
+              subPath: "powerdns"
+              mountPath: "/config"
+          restartPolicy: OnFailure

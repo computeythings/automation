@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: sonarr
+  name: sonarr
+  
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarr
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: sonarr
+    spec:
+      volumes:
+      - name: nfs
+        persistentVolumeClaim:
+          claimName: nfs-pvc
+      - name: config
+        persistentVolumeClaim:
+          claimName: sonarr-longhorn
+      containers:
+      - image: linuxserver/sonarr:4.0.0-develop
+        name: sonarr
+        resources: {}
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+        - name: nfs
+          mountPath: "/media"
+      dnsConfig:
+        options:
+        - name: ndots
+          value: "1"
+        - name: single-request-reopen
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: sonarr
+  name: sonarr
+spec:
+  ports:
+  - name: web
+    protocol: TCP
+    port: 8989
+  selector:
+    app: sonarr
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sonarr-ingress
+spec:
+  rules:
+  - host: sonarr.k8s.jnet.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sonarr
+            port:
+              name: web

@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: ombi
+  name: ombi
+  
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ombi
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ombi
+    spec:
+      volumes:
+      - name: nfs
+        persistentVolumeClaim:
+          claimName: nfs-pvc
+      - name: config
+        persistentVolumeClaim:
+          claimName: ombi-longhorn
+      containers:
+      - image: linuxserver/ombi
+        name: ombi
+        resources: {}
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+        - name: nfs
+          mountPath: "/media"
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: ombi
+  name: ombi
+spec:
+  ports:
+  - name: web
+    protocol: TCP
+    port: 3579
+  selector:
+    app: ombi
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ombi-ingress
+spec:
+  rules:
+  - host: ombi.k8s.jnet.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ombi
+            port:
+              name: web

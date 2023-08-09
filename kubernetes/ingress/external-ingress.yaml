@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: external
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "600m"
+    nginx.org/client-max-body-size: "600m"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+      - "*.jp.gonnella.dev"
+      secretName: letsencrypt
+  rules:
+    - host: tv.jp.gonnella.dev
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8jellyfin
+              port:
+                number: 80

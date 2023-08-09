@@ -1,0 +1,124 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legacy-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: sonarr.media.jnet.lan
+      http: &sonarr
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8sonarr
+              port:
+                number: 80
+    - host: sonarr.mediaportal.jnet.lan
+      http: *sonarr
+
+    - host: radarr.media.jnet.lan
+      http: &radarr
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8radarr
+              port:
+                number: 80
+    - host: radarr.mediaportal.jnet.lan
+      http: *radarr
+
+    - host: bazarr.media.jnet.lan
+      http: &bazarr
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8bazarr
+              port:
+                number: 80
+    - host: bazarr.mediaportal.jnet.lan
+      http: *bazarr
+
+    - host: request.media.jnet.lan
+      http: &request
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8ombi
+              port:
+                number: 80
+    - host: request.mediaportal.jnet.lan
+      http: *request
+
+    - host: nzb.media.jnet.lan
+      http: &nzb
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8sabnzbd
+              port:
+                number: 80
+    - host: nzb.mediaportal.jnet.lan
+      http: *nzb
+
+    - host: torrents.media.jnet.lan
+      http: &torrent
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8qbittorrent
+              port:
+                number: 80
+    - host: torrent.mediaportal.jnet.lan
+      http: *torrent
+
+    - host: jackett.media.jnet.lan
+      http: &jackett
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8jackett
+              port:
+                number: 80
+    - host: jackett.mediaportal.jnet.lan
+      http: *jackett
+
+    - host: jelly.media.jnet.lan
+      http: &jelly
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8jellyfin
+              port:
+                number: 80
+    - host: jelly.mediaportal.jnet.lan
+      http: *jelly
+
+    - host: cloud.media.jnet.lan
+      http: &cloud
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8nextcloud
+              port:
+                number: 80
+    - host: cloud.mediaportal.jnet.lan
+      http: *cloud
+

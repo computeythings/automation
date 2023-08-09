@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: radius
+    service: sysutil
+  name: radius
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radius
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: radius
+        service: sysutil
+    spec:
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: config-pvc
+      containers:
+      - image: freeradius/freeradius-server
+        name: radius
+        resources: {}
+        volumeMounts:
+        - name: config
+          subPath: "radius"
+          mountPath: "/etc/raddb"
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: radius
+    service: sysutil
+  name: radius
+  annotations:
+    metallb.universe.tf/allow-shared-ip: "true"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.81.4.5
+  externalTrafficPolicy: Local
+  ports:
+  - name: authentication
+    port: 1812
+    protocol: UDP
+    targetPort: 1812
+  - name: accounting
+    port: 1813
+    protocol: UDP
+    targetPort: 1813
+  selector:
+    app: radius
+status:
+  loadBalancer: {}

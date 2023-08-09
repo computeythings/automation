@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: jellyfin
+    service: media-frontend
+  name: jellyfin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jellyfin
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: jellyfin
+    spec:
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: jellyfin-longhorn
+      - name: nfs
+        persistentVolumeClaim:
+          claimName: nfs-pvc
+      containers:
+      - image: linuxserver/jellyfin
+        name: jellyfin
+        resources: {}
+        env:
+        - name: PUID
+          value: "911"
+        - name: PGID
+          value: "911"
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+        - name: nfs
+          subPath: "Videos"
+          mountPath: "/media"
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: jellyfin
+    service: media-frontend
+  name: jellyfin
+spec:
+  ports:
+  - name: web
+    protocol: TCP
+    port: 8096
+  selector:
+    app: jellyfin
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jellyfin-ingress
+spec:
+  rules:
+  - host: jelly.k8s.jnet.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin
+            port:
+              name: web
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jellyfin-ext
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "600m"
+    nginx.org/client-max-body-size: "600m"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+      - "*.jp.gonnella.dev"
+      secretName: letsencrypt
+  rules:
+  - host: tv.jp.gonnella.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin
+            port:
+              name: web

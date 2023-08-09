@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wireguard
+type: Opaque
+stringData:
+  wg0.conf: |
+    [Interface]
+    Address = 10.81.201.1
+    ListenPort = 51820
+    PrivateKey = UFb4fgQ0gvYn/ZJQK3j2plkdLTKdyej+gxQIc2VUp14=
+    PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth+ -j MASQUERADE
+    PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth+ -j MASQUERADE
+
+    [Peer]
+    # peer_BRYAN_LAPTOP
+    PublicKey = 5A3Zo9EUYc39+Ek6pCds1AmNJqbTl8Too+PVUY36BFg=
+    PresharedKey = +hBjIHqkrWqavan2OITDZ8Bux2ELY+rzcPjMAnJlj5g=
+    AllowedIPs = 10.81.201.2/32
+
+    [Peer]
+    # peer_BRYAN_DESKTOP
+    PublicKey = x6Dk6Qr8EDIbBG25kBO5nYB4dRQjRfIpmEnlvXHbpEs=
+    PresharedKey = sWeQbNdVcRCRtfDl0KwRpEeyk1DjbRgSIqMue9/1CoQ=
+    AllowedIPs = 10.81.201.3/32
+
+    [Peer]
+    # peer_BRYAN_IPHONE
+    PublicKey = FiAxPYKnl4YYZqtLUwtVHhPlhxrnmP+cL531Xbfje38=
+    PresharedKey = SGIQVkwOE6EX2+UelVTRGVDHCOZsjSnHDB5e4uFwpqs=
+    AllowedIPs = 10.81.201.4/32
+
+    [Peer]
+    # peer_TRAVEL_ROUTER
+    PublicKey = LI8X2j+tlfNyh0VHYgJPSVVzB3nPoxguA/yYMSEnK0E=
+    PresharedKey = vusWTHPUR16sMEJdCm6NornPJKqEjiPSoMmvcpIt8h0=
+    AllowedIPs = 10.81.201.5/32
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wireguard
+  labels:
+    app: wireguard
+    service: sysutil
+spec:
+  selector:
+    matchLabels:
+      name: wireguard
+  template:
+    metadata:
+      labels:
+        name: wireguard
+        service: sysutil
+    spec:
+      containers:
+        - name: "wireguard"
+          image: "linuxserver/wireguard:latest"
+          volumeMounts:
+            - name: config
+              subPath: "wireguard"
+              mountPath: /config
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - NET_ADMIN
+          env:
+            - name: SERVERURL
+              value: "vpn.jp.gonnella.dev"
+            - name: PEERS
+              value: "BRYANLAPTOP,BRYANDESKTOP,BRYANIPHONE,TRAVELROUTER,FWETCHER"
+            - name: PEERDNS
+              value: "10.81.4.3,jnet.lan"
+            - name: INTERNAL_SUBNET
+              value: "10.201.20.0/27"
+      volumes:
+        - name : config
+          persistentVolumeClaim:
+            claimName: config-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wireguard
+  labels:
+    app: wireguard
+    service: sysutil
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.81.4.4
+  externalTrafficPolicy: Local
+  ports:
+    - name: wireguard
+      port: 51820
+      protocol: UDP
+      targetPort: 51820
+  selector:
+    name: wireguard

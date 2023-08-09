@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: postgres
+    service: sysutil
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: postgres
+        service: sysutil
+    spec:
+      containers:
+      - image: postgres:13
+        name: postgres
+        resources: {}
+        env:
+          - name: PGDATA
+            value: "/data"
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: postgres
+                key: POSTGRES_USER
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres
+                key: POSTGRES_PASSWORD
+        volumeMounts:
+        - name: config
+          subPath: "postgres"
+          mountPath: "/data"
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: config-pvc
+
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: postgres
+    service: sysutil
+  name: postgres
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.81.4.6
+  externalTrafficPolicy: Local
+  ports:
+  - port: 5432
+    protocol: TCP
+    targetPort: 5432
+  selector:
+    app: postgres
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: pgadmin
+    service: sysutil
+  name: pgadmin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgadmin
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: pgadmin
+        service: sysutil
+    spec:
+      containers:
+      - image: dpage/pgadmin4
+        name: pgadmin4
+        resources: {}
+        env:
+        - name: PGADMIN_DEFAULT_EMAIL
+          value: "bryan@gonnella.dev"
+        - name: PGADMIN_DEFAULT_PASSWORD
+          value: "123whatevers"
+        volumeMounts:
+        - name: config
+          subPath: "pgadmin"
+          mountPath: "/var/lib/pgadmin"
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: config-pvc
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: pgadmin
+    service: sysutil
+  name: pgadmin
+spec:
+  ports:
+  - name: web
+    protocol: TCP
+    port: 80
+  selector:
+    app: pgadmin
+status:
+  loadBalancer: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: postgres-ingress
+spec:
+  rules:
+  - host: postgres.k8s.jnet.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: pgadmin
+            port:
+              name: web

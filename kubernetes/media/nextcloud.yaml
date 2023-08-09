@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: nextcloud
+    service: media-frontend
+  name: nextcloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextcloud
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nextcloud
+    spec:
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: nextcloud-longhorn
+      - name: nfs
+        persistentVolumeClaim:
+          claimName: nfs-pvc
+      containers:
+      - image: nextcloud
+        name: nextcloud
+        resources: {}
+        volumeMounts:
+        - name: config
+          subPath: "nextcloud"
+          mountPath: "/var/www/html"
+        - name: nfs
+          subPath: "cloudstore"
+          mountPath: "/data"
+        env:
+          - name: domain
+            value: 'cloud.jp.gonnella.dev'
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: nextcloud
+                key: NEXTCLOUD_PGUSER
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: nextcloud
+                key: NEXTCLOUD_PGPASS
+          - name: POSTGRES_DB
+            value: nextcloud
+          - name: POSTGRES_HOST
+            value: 'postgres.default.svc.cluster.local'
+          - name: NEXTCLOUD_DATA_DIR
+            value: '/data'
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: nextcloud
+    service: media-frontend
+  name: nextcloud
+spec:
+  ports:
+  - name: web
+    protocol: TCP
+    port: 80
+  selector:
+    app: nextcloud
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextcloud-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "600m"
+    nginx.org/client-max-body-size: "600m"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+      - "*.jp.gonnella.dev"
+      secretName: letsencrypt
+  rules:
+    - host: cloud.jp.gonnella.dev
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: nextcloud
+              port:
+                number: 80

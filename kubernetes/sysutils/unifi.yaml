@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: unifi
+    service: sysutil
+  name: unifi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: unifi
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: unifi
+        service: sysutil
+    spec:
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: config-pvc
+      containers:
+      - image: linuxserver/unifi-controller:latest
+        name: unifi
+        resources: {}
+        volumeMounts:
+        - name: config
+          subPath: "unifi"
+          mountPath: "/config"
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: unifi
+    service: sysutil
+  name: unifi
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.81.4.7
+  externalTrafficPolicy: Local
+  ports:
+  - name: websecure
+    port: 443
+    protocol: TCP
+    targetPort: 8443
+  - name: stun
+    port: 3478
+    protocol: UDP
+  - name: apdiscover
+    port: 10001
+    protocol: UDP
+  - name: apcomms
+    port: 8080
+    protocol: TCP
+  selector:
+    app: unifi
+status:
+  loadBalancer: {}
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: unifi-ingress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: HostSNI(`unifi.k8s.jnet.lan`)
+    services:
+    - name: unifi
+      port: 443
+  tls:
+    passthrough: true

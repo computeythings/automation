@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: bazarr
+  name: bazarr
+  
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bazarr
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: bazarr
+    spec:
+      volumes:
+      - name: nfs
+        persistentVolumeClaim:
+          claimName: nfs-pvc
+      - name: config
+        persistentVolumeClaim:
+          claimName: bazarr-longhorn
+      containers:
+      - image: linuxserver/bazarr
+        name: bazarr
+        resources: {}
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+        - name: nfs
+          mountPath: "/media"
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: bazarr
+  name: bazarr
+spec:
+  ports:
+  - name: web
+    protocol: TCP
+    port: 6767
+  selector:
+    app: bazarr
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bazarr-ingress
+spec:
+  rules:
+  - host: bazarr.k8s.jnet.lan
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: bazarr
+            port:
+              name: web

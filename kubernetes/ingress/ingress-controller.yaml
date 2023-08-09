@@ -1,0 +1,128 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-controller
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: radarr.k8s.jnet.lan
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8radarr
+              port:
+                number: 80
+    - host: request.k8s.jnet.lan
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8ombi
+              port:
+                number: 80
+    - host: nzb.k8s.jnet.lan
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8sabnzbd
+              port:
+                number: 80
+    - host: torrents.k8s.jnet.lan
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8qbittorrent
+              port:
+                number: 80
+    - host: jackett.k8s.jnet.lan
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8jackett
+              port:
+                number: 80
+    - host: cloud.k8s.jnet.lan
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8nextcloud
+              port:
+                number: 80
+    - host: unifi.k8s.jnet.lan
+      http: &unifi
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8unifi
+              port:
+                number: 443
+    - host: unifi.mediaportal.jnet.lan
+      http: *unifi
+    - host: unifi.media.jnet.lan
+      http: *unifi
+
+    - host: prometheus.k8s.jnet.lan
+      http: &prometheus
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: k8prometheus
+              port:
+                number: 9090
+    - host: prometheus.mediaportal.jnet.lan
+      http: *prometheus
+    - host: prometheus.media.jnet.lan
+      http: *prometheus
+
+    - host: dns.k8s.jnet.lan
+      http: &dns
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: dns-admin
+              port:
+                number: 80
+    - host: dns.mediaportal.jnet.lan
+      http: *dns
+    - host: dns.media.jnet.lan
+      http: *dns
+
+    - host: postgres.k8s.jnet.lan
+      http: &postgres
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: pgadmin
+              port:
+                number: 80
+    - host: postgres.mediaportal.jnet.lan
+      http: *postgres
+    - host: postgres.media.jnet.lan
+      http: *postgres

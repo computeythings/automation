@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: k8prometheus
+    service: sysutil
+  name: k8prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8prometheus
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: k8prometheus
+        service: sysutil
+    spec:
+      containers:
+      - image: prom/prometheus:v2.44.0
+        name: prometheus
+        resources: {}
+        volumeMounts:
+        - name: config
+          subPath: "prometheus"
+          mountPath: "/etc/prometheus"
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: config-pvc
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: k8prometheus
+    service: sysutil
+  name: k8prometheus
+spec:
+  ports:
+  - port: 9090
+    protocol: TCP
+    targetPort: 9090
+  selector:
+    app: k8prometheus
+status:
+  loadBalancer: {}
