@@ -3,33 +3,41 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
-    app: prometheus
-    service: sysutil
-  name: prometheus
+    app: fileserve
+  name: fileserve
+  
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: prometheus
+      app: fileserve
   strategy: {}
   template:
     metadata:
       creationTimestamp: null
       labels:
-        app: prometheus
-        service: sysutil
+        app: fileserve
     spec:
-      containers:
-      - image: prom/prometheus:v2.44.0
-        name: prometheus
-        resources: {}
-        volumeMounts:
-        - name: config
-          mountPath: "/etc/prometheus"
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: prometheus-longhorn
+          claimName: fileserve-longhorn
+      containers:
+      - image: nginx
+        name: fileserve
+        resources: {}
+        volumeMounts:
+        - name: config
+          mountPath: "/etc/nginx"
+          subPath: "config"
+        - name: config
+          mountPath: "/var/www/html"
+          subPath: "share"
+      dnsConfig:
+        options:
+        - name: ndots
+          value: "1"
+        - name: single-request-reopen
 status: {}
 ---
 apiVersion: v1
@@ -37,32 +45,32 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    app: prometheus
-    service: sysutil
-  name: prometheus
+    app: fileserve
+  name: fileserve
 spec:
   ports:
-  - port: 9090
+  - name: web
     protocol: TCP
-    name: web
+    port: 80
   selector:
-    app: prometheus
+    app: fileserve
+  type: ClusterIP
 status:
   loadBalancer: {}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: prometheus-ingress
+  name: fileserve-ingress
 spec:
   rules:
-  - host: prometheus.k8s.jnet.lan
+  - host: fileserve.k8s.jnet.lan
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: prometheus
+            name: fileserve
             port:
               name: web
