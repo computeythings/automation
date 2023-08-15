@@ -4,7 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     app: jellyfin
-    service: media-frontend
+    service: media
   name: jellyfin
 spec:
   replicas: 1
@@ -17,6 +17,7 @@ spec:
       creationTimestamp: null
       labels:
         app: jellyfin
+        service: media
     spec:
       volumes:
       - name: config
@@ -40,6 +41,11 @@ spec:
         - name: nfs
           subPath: "Videos"
           mountPath: "/media"
+      dnsConfig:
+        options:
+        - name: ndots
+          value: "1"
+        - name: single-request-reopen
 status: {}
 ---
 apiVersion: v1

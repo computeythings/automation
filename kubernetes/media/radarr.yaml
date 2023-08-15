@@ -4,7 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     app: radarr
-    service: media-mgmt
+    service: media
   name: radarr
 spec:
   replicas: 1
@@ -17,6 +17,7 @@ spec:
       creationTimestamp: null
       labels:
         app: radarr
+        service: media
     spec:
       volumes:
       - name: nfs

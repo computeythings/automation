@@ -4,7 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     app: nextcloud
-    service: media-frontend
+    service: media
   name: nextcloud
 spec:
   replicas: 1
@@ -17,6 +17,7 @@ spec:
       creationTimestamp: null
       labels:
         app: nextcloud
+        service: media
     spec:
       volumes:
       - name: config

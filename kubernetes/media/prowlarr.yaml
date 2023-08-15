@@ -4,6 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     app: prowlarr
+    service: media
   name: prowlarr
 spec:
   replicas: 1
@@ -16,6 +17,7 @@ spec:
       creationTimestamp: null
       labels:
         app: prowlarr
+        service: media
     spec:
       volumes:
       - name: config

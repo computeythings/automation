@@ -4,6 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     app: sabnzbd
+    service: media
   name: sabnzbd
 spec:
   replicas: 1
@@ -16,6 +17,7 @@ spec:
       creationTimestamp: null
       labels:
         app: sabnzbd
+        service: media
     spec:
       volumes:
       - name: nfs

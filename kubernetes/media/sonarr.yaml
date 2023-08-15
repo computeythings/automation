@@ -4,8 +4,8 @@ metadata:
   creationTimestamp: null
   labels:
     app: sonarr
+    service: media
   name: sonarr
-  
 spec:
   replicas: 1
   selector:
@@ -17,6 +17,7 @@ spec:
       creationTimestamp: null
       labels:
         app: sonarr
+        service: media
     spec:
       volumes:
       - name: nfs
@@ -26,7 +27,7 @@ spec:
         persistentVolumeClaim:
           claimName: sonarr-longhorn
       containers:
-      - image: linuxserver/sonarr
+      - image: linuxserver/sonarr:4.0.0-develop
         name: sonarr
         resources: {}
         volumeMounts:

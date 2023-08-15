@@ -4,8 +4,8 @@ metadata:
   creationTimestamp: null
   labels:
     app: bazarr
+    service: media
   name: bazarr
-  
 spec:
   replicas: 1
   selector:
@@ -17,6 +17,7 @@ spec:
       creationTimestamp: null
       labels:
         app: bazarr
+        service: media
     spec:
       volumes:
       - name: nfs

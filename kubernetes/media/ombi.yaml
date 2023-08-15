@@ -4,6 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     app: ombi
+    service: media
   name: ombi
   
 spec:
@@ -17,6 +18,7 @@ spec:
       creationTimestamp: null
       labels:
         app: ombi
+        service: media
     spec:
       volumes:
       - name: nfs
