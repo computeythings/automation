@@ -1,6 +1,11 @@
 # helm repo add traefik https://traefik.github.io/charts
 # helm install traefik traefik/traefik --values=traefik-values.yml
 additionalArguments:
+- "--traefik.frontend.passHostHeader"
+- "--entrypoints.web.forwardedHeaders.insecure"
+- "--entrypoints.web.proxyProtocol.insecure"
+- "--entrypoints.websecure.forwardedHeaders.insecure"
+- "--entrypoints.websecure.proxyProtocol.insecure"
 # Configure your CertificateResolver here...
 #
 # HTTP Challenge
