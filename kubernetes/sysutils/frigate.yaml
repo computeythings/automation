@@ -44,6 +44,13 @@ spec:
         app: frigate
         service: sysutil
     spec:
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: frigate
+      - name: nfs
+        persistentVolumeClaim:
+          claimName: nfs-nvr
       containers:
         - image: ghcr.io/blakeblackshear/frigate:stable
           name: frigate
@@ -53,18 +60,11 @@ spec:
                 secretKeyRef:
                   name: frigate
                   key: FRIGATE_RTSP_PASSWORD
-      volumeMounts:
-        - name: nfs
-          mountPath: "/media"
-        - name: config
-          mountPath: "/config"
-      volumes:
-      - name: config
-        persistentVolumeClaim:
-          claimName: frigate
-      - name: nfs
-        persistentVolumeClaim:
-          claimName: nfs-nvr
+          volumeMounts:
+            - name: nfs
+              mountPath: "/media"
+            - name: config
+              mountPath: "/config"
 status: {}
 ---
 apiVersion: v1
@@ -87,11 +87,11 @@ spec:
     port: 8554
     protocol: TCP
     targetPort: 8554
-  - name: webrtc_udp
+  - name: webrtc-udp
     port: 8555
     protocol: UDP
     targetPort: 8555
-  - name: webrtc_tcp
+  - name: webrtc-tcp
     port: 8555
     protocol: TCP
     targetPort: 8555
