@@ -1,0 +1,12 @@
+---
+
+- name: "print env vars"
+  hosts: switches
+  gather_facts: false
+  connection: network_cli
+
+  tasks:
+    - name: "print vars"
+      debug:
+        msg: hostname is {{ inventory_hostname }}
+

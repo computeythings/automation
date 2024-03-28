@@ -1,0 +1,17 @@
+# Service patch to modify externalTrafficPolicy
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: traefik
+    meta.helm.sh/release-namespace: traefik-v2
+    metallb.universe.tf/ip-allocated-from-pool: k8s-net
+  labels:
+    app.kubernetes.io/instance: traefik-traefik-v2
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: traefik
+    helm.sh/chart: traefik-26.0.0
+  name: traefik
+  namespace: traefik-v2
+spec:
+  externalTrafficPolicy: Local

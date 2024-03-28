@@ -1,13 +1,21 @@
-[k8s:vars]
-ansible_ssh_user=ansible
-ansible_ssh_private_key_file=/etc/ansible/keys/id_rsa
-[k8s]
-10.81.20.2
-10.81.20.3
-10.81.20.4
-[gns3:vars]
-ansible_ssh_user=ansible
-ansible_ssh_private_key_file=/etc/ansible/keys/id_rsa
-[gns3]
-10.81.20.9
-10.81.20.10
+servers:
+  hosts:
+    192.168.1.11:
+    192.168.1.12:
+    192.168.1.13:
+    192.168.1.14:
+    192.168.1.15:
+switches:
+  children:
+    dell:
+    cisco:
+
+dell:
+  hosts:
+    spine1:
+      ansible_host: 131.226.217.142
+    spine2:
+      ansible_host: 131.226.217.144
+cisco: 
+  hosts:
+    sandbox-iosxe-latest-1.cisco.com

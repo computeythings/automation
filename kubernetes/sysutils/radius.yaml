@@ -1,3 +1,16 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: radius
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 4Gi
+  storageClassName: longhorn-persist
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,7 +35,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: config-pvc
+          claimName: radius
       containers:
       - image: freeradius/freeradius-server
         name: radius
@@ -45,7 +58,7 @@ metadata:
     metallb.universe.tf/allow-shared-ip: "true"
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.81.4.5
+  loadBalancerIP: 10.1.250.5
   externalTrafficPolicy: Local
   ports:
   - name: authentication

@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,32 +27,55 @@ spec:
         - name: net.ipv4.ip_unprivileged_port_start
           value: "53"
       volumes:
-        - name: config
-          persistentVolumeClaim:
-            claimName: powerdns-longhorn
+        - name: pdns
+          configMap:
+            name: pdns.conf
+        - name: recursor
+          configMap:
+            name: recursor.conf
+        - name: pdns-api
+          configMap:
+            name: pdns-api.conf
+        - name: recursor-api
+          configMap:
+            name: recursor-api.conf
+        - name: zones
+          configMap:
+            name: forward-zones.conf
       containers:
       - image: powerdns/pdns-recursor-master
         name: pdns-recursor-master
         resources: {}
-        env:
-        - name: PDNS_RECURSOR_API_KEY
-          value: "test123"
-        - name: SQLALCHEMY_DATABASE_URI
-          value: "postgresql://pdns_admin:MuffinSquirrel@postgres.default.svc.cluster.local:5432/pdnstest"
+          #env:
+          #- name: PDNS_RECURSOR_API_KEY
+          #value: "test123"
+          #- name: SQLALCHEMY_DATABASE_URI
+          #value: "postgresql://pdns_admin:MuffinSquirrel@postgres.default.svc.cluster.local:5432/pdnstest"
         volumeMounts:
-          - name: config
-            mountPath: "/etc/powerdns"
+          - name: zones
+            mountPath: "/etc/powerdns/recursor.d/forward-zones.conf"
+            subPath: "forward-zones.conf"
+          - name: recursor-api
+            mountPath: "/etc/powerdns/recursor.d/_api.conf"
+            subPath: "_api.conf"
+          - name: recursor
+            mountPath: "/etc/powerdns/recursor.conf"
+            subPath: "recursor.conf"
       - image: powerdns/pdns-auth-master
         name: pdns-auth-master
         resources: {}
-        env:
-        - name: PDNS_AUTH_API_KEY
-          value: "test123"
-        - name: SQLALCHEMY_DATABASE_URI
-          value: "postgresql://pdns_admin:MuffinSquirrel@postgres.default.svc.cluster.local:5432/pdnstest"
+          #env:
+          #- name: PDNS_AUTH_API_KEY
+          #value: "test123"
+          #- name: SQLALCHEMY_DATABASE_URI
+          #value: "postgresql://pdns_admin:MuffinSquirrel@postgres.default.svc.cluster.local:5432/pdnstest"
         volumeMounts:
-          - name: config
-            mountPath: "/etc/powerdns"
+          - name: pdns-api
+            mountPath: "/etc/powerdns/pdns.d/_api.conf"
+            subPath: "_api.conf"
+          - name: pdns
+            mountPath: "/etc/powerdns/pdns.conf"
+            subPath: "pdns.conf"
 status: {}
 ---
 apiVersion: v1
@@ -65,7 +89,7 @@ metadata:
   name: dns
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.81.4.3
+  loadBalancerIP: 10.1.250.3
   externalTrafficPolicy: Local
   ports:
   - name: dns
@@ -120,7 +144,7 @@ spec:
         - name: SECRET_KEY
           value: "pJaSMCjEaaJ8PycejdCEjcE4QLq3iDluPtHsQFlQKnrvlVjCJIVIU1"
         - name: SQLALCHEMY_DATABASE_URI
-          value: "postgresql://pdns_admin:MuffinSquirrel@postgres.default.svc.cluster.local:5432/pdns_admin"
+          value: "postgresql://pdns_admin:MuffinSquirrel@10.1.250.6:5432/pdns_admin"
 status: {}
 ---
 apiVersion: v1
@@ -148,7 +172,7 @@ metadata:
   name: dns-ingress
 spec:
   rules:
-  - host: dns.k8s.jnet.lan
+  - host: dns.k8s.bnet.lan
     http:
       paths:
       - path: /
@@ -175,7 +199,7 @@ spec:
           volumes:
           - name: config
             persistentVolumeClaim:
-              claimName: powerdns-longhorn
+              claimName: powerdns
           containers:
           - name: update-blocklist
             image: alpine:latest

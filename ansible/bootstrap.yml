@@ -1,0 +1,19 @@
+---
+
+- name: "Configure switchports based on rack elevations"
+  hosts: switches
+  gather_facts: false
+  connection: network_cli
+
+  tasks:
+    - name: "Load Bootstrap vars"
+      ansible.builtin.include_vars:
+        file: staging.yml
+      when: bootstrap | default(false) | bool
+    - name: "DEBUG"
+      debug:
+        msg: "Bootstrap is {{ bootstrap }}"
+      when: bootstrap is defined
+    - name: "Print vars"
+      debug:
+        msg: "idrac user is {{ idrac_user }}\nidrac password is {{ idrac_pwd }}"

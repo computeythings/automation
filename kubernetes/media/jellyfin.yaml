@@ -1,3 +1,16 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: jellyfin
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 25Gi
+  storageClassName: longhorn-persist
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,17 +32,31 @@ spec:
         app: jellyfin
         service: media
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cpu
+                operator: In
+                values:
+                - haswell
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: jellyfin-longhorn
-      - name: nfs
+          claimName: jellyfin
+      - name: movies
         persistentVolumeClaim:
-          claimName: nfs-pvc
+          claimName: movies-claim
+      - name: anime
+        persistentVolumeClaim:
+          claimName: anime-claim
+      - name: tv
+        persistentVolumeClaim:
+          claimName: tv-claim
       containers:
       - image: linuxserver/jellyfin
         name: jellyfin
-        resources: {}
         env:
         - name: PUID
           value: "911"
@@ -38,9 +65,15 @@ spec:
         volumeMounts:
         - name: config
           mountPath: "/config"
-        - name: nfs
-          subPath: "Videos"
-          mountPath: "/media"
+        - name: tv
+          mountPath: "/media/tv"
+          readOnly: true
+        - name: anime
+          mountPath: "/media/anime"
+          readOnly: true
+        - name: movies
+          mountPath: "/media/movies"
+          readOnly: true
       dnsConfig:
         options:
         - name: ndots
@@ -73,7 +106,7 @@ metadata:
   name: jellyfin-ingress
 spec:
   rules:
-  - host: jelly.k8s.jnet.lan
+  - host: jelly.k8s.bnet.lan
     http:
       paths:
       - path: /
@@ -87,18 +120,10 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: jellyfin-ext
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "600m"
-    nginx.org/client-max-body-size: "600m"
+  name: jellyfin-public
 spec:
-  ingressClassName: nginx
-  tls:
-    - hosts:
-      - "*.jp.gonnella.dev"
-      secretName: letsencrypt
   rules:
-  - host: tv.jp.gonnella.dev
+  - host: tv.us.gonnella.dev
     http:
       paths:
       - path: /

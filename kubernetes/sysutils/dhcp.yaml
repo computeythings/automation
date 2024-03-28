@@ -1,3 +1,16 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: dhcp
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: longhorn-persist
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,17 +32,33 @@ spec:
         app: dhcp
         service: sysutil
     spec:
-      volumes:
-      - name: config
-        persistentVolumeClaim:
-          claimName: dhcp-longhorn
+      initContainers:
+      - name: loader
+        image: debian:latest
+        command:
+          - /bin/sh
+          - -c
+          - |
+            apt-get update && apt-get install -y git &&
+            git clone https://github.com/computeythings/dhcp.git /temp &&
+            cp /temp/* /data
+        volumeMounts:
+        - name: config
+          mountPath: "/data"
       containers:
       - image: networkboot/dhcpd
+        #- image: nginx
         name: dhcpd
         resources: {}
         volumeMounts:
         - name: config
           mountPath: "/data"
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: dhcp
+      securityContext:
+        fsGroupChangePolicy: "OnRootMismatch"
 status: {}
 ---
 apiVersion: v1
@@ -42,7 +71,7 @@ metadata:
   name: dhcp
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.81.4.2
+  loadBalancerIP: 10.1.250.2
   externalTrafficPolicy: Local
   ports:
     #- name: client

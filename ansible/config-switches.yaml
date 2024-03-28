@@ -1,0 +1,20 @@
+---
+
+- name: "Configure switchports based on rack elevations"
+  hosts: switches
+  gather_facts: false
+  connection: network_cli
+
+# TODO: Distinguish configs by switch type
+  tasks:
+    - name: "Configure prod switch"
+      debug:
+        msg: "Configuring port-channel e1/1/{{ hostvars[item].rack_unit }} for {{ hostvars[item].hostname }}"
+      when: "'dell' in group_names"
+      loop: "{{ groups['servers'] }}"
+
+    - name: "Configure management switch"
+      debug:
+        msg: "Configuring port e1/0/{{ hostvars[item].rack_unit }} for {{ hostvars[item].hostname }}"
+      when: "'cisco' in group_names"
+      loop: "{{ groups['servers'] }}"

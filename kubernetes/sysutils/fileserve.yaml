@@ -1,3 +1,16 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: fileserve
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 8Gi
+  storageClassName: longhorn-persist
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,7 +34,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: fileserve-longhorn
+          claimName: fileserve
       containers:
       - image: nginx
         name: fileserve
@@ -64,7 +77,7 @@ metadata:
   name: fileserve-ingress
 spec:
   rules:
-  - host: fileserve.k8s.jnet.lan
+  - host: fileserve.k8s.bnet.lan
     http:
       paths:
       - path: /

@@ -1,3 +1,16 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: prowlarr
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: longhorn-persist
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,7 +35,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: prowlarr-longhorn
+          claimName: prowlarr
       containers:
       - image: linuxserver/prowlarr
         name: prowlarr
@@ -62,7 +75,7 @@ metadata:
   name: prowlarr-ingress
 spec:
   rules:
-  - host: prowlarr.k8s.jnet.lan
+  - host: prowlarr.k8s.bnet.lan
     http:
       paths:
       - path: /

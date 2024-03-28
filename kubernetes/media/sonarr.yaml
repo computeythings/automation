@@ -1,3 +1,35 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sonarr-config.xml
+data:
+  sonarr-config.xml: |-
+    <Config>
+      <BindAddress>*</BindAddress>
+      <Port>8989</Port>
+      <SslPort>9898</SslPort>
+      <EnableSsl>False</EnableSsl>
+      <LaunchBrowser>True</LaunchBrowser>
+      <ApiKey>f50e289f642a4e19a2f8ad9d4cc653b4</ApiKey>
+      <AuthenticationMethod>Forms</AuthenticationMethod>
+      <Branch>develop</Branch>
+      <LogLevel>debug</LogLevel>
+      <SslCertPath></SslCertPath>
+      <SslCertPassword></SslCertPassword>
+      <UrlBase></UrlBase>
+      <InstanceName>Sonarr</InstanceName>
+      <UpdateMechanism>Docker</UpdateMechanism>
+      <AnalyticsEnabled>False</AnalyticsEnabled>
+      <PostgresUser>sonarr</PostgresUser>
+      <PostgresPassword>TvSendingFactory</PostgresPassword>
+      <PostgresPort>5432</PostgresPort>
+      <PostgresHost>postgres.default.svc.cluster.local</PostgresHost>
+      <PostgresMainDb>sonarr-data</PostgresMainDb>
+      <PostgresLogDb>sonarr-log</PostgresLogDb>
+      <AuthenticationRequired>Enabled</AuthenticationRequired>
+    </Config>
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,21 +52,35 @@ spec:
         service: media
     spec:
       volumes:
-      - name: nfs
-        persistentVolumeClaim:
-          claimName: nfs-pvc
       - name: config
+        configMap:
+          name: sonarr-config.xml
+          items:
+            - key: sonarr-config.xml
+              path: config.xml
+      - name: anime
         persistentVolumeClaim:
-          claimName: sonarr-longhorn
+          claimName: anime-claim
+      - name: tv
+        persistentVolumeClaim:
+          claimName: tv-claim
+      - name: downloads
+        persistentVolumeClaim:
+          claimName: downloads-claim
       containers:
       - image: linuxserver/sonarr:4.0.0-develop
         name: sonarr
         resources: {}
         volumeMounts:
         - name: config
-          mountPath: "/config"
-        - name: nfs
-          mountPath: "/media"
+          mountPath: "/config/config.xml"
+          subPath: "config.xml"
+        - name: anime
+          mountPath: "/media/anime"
+        - name: tv
+          mountPath: "/media/tv"
+        - name: downloads
+          mountPath: "/downloads"
       dnsConfig:
         options:
         - name: ndots
@@ -66,7 +112,7 @@ metadata:
   name: sonarr-ingress
 spec:
   rules:
-  - host: sonarr.k8s.jnet.lan
+  - host: sonarr.k8s.bnet.lan
     http:
       paths:
       - path: /

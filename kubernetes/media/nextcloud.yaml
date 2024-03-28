@@ -1,3 +1,25 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nextcloud
+type: kubernetes.io/basic-auth
+stringData:
+  username: "nextcloud" # required field for kubernetes.io/basic-auth
+  password: "SecretCloudyStuff1!" # required field for kubernetes.io/basic-auth
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nextcloud
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 64Gi
+  storageClassName: longhorn-persist
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,40 +44,38 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: nextcloud-longhorn
+          claimName: nextcloud
       - name: nfs
         persistentVolumeClaim:
-          claimName: nfs-pvc
+          claimName: nextcloud-claim
       containers:
       - image: nextcloud
         name: nextcloud
         resources: {}
         volumeMounts:
         - name: config
-          subPath: "nextcloud"
           mountPath: "/var/www/html"
         - name: nfs
-          subPath: "cloudstore"
           mountPath: "/data"
         env:
           - name: domain
-            value: 'cloud.jp.gonnella.dev'
+            value: "cloud.us.gonnella.dev"
           - name: POSTGRES_USER
             valueFrom:
               secretKeyRef:
                 name: nextcloud
-                key: NEXTCLOUD_PGUSER
+                key: username
           - name: POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: nextcloud
-                key: NEXTCLOUD_PGPASS
+                key: password
           - name: POSTGRES_DB
-            value: nextcloud
+            value: "nextcloud"
           - name: POSTGRES_HOST
-            value: 'postgres.default.svc.cluster.local'
+            value: "postgres.default.svc.cluster.local"
           - name: NEXTCLOUD_DATA_DIR
-            value: '/data'
+            value: "/data"
 status: {}
 ---
 apiVersion: v1
@@ -81,17 +101,13 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: nextcloud-ingress
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "600m"
-    nginx.org/client-max-body-size: "600m"
 spec:
-  ingressClassName: nginx
-  tls:
-    - hosts:
-      - "*.jp.gonnella.dev"
-      secretName: letsencrypt
+  #tls:
+  # - hosts:
+  #   - "*.us.gonnella.dev"
+  #   secretName: letsencrypt
   rules:
-    - host: cloud.jp.gonnella.dev
+    - host: cloud.us.gonnella.dev
       http:
         paths:
         - path: /

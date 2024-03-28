@@ -1,3 +1,46 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 32Gi
+  storageClassName: longhorn-persist
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pgadmin
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 4Gi
+  storageClassName: longhorn-persist
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres
+type: kubernetes.io/basic-auth
+stringData:
+  username: "adminpg" #username
+  password: "ForwardDartingBagel1!" #password
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pgadmin
+type: kubernetes.io/basic-auth
+stringData:
+  username: "bryan@gonnella.dev" #username
+  password: "123whatevers" #password
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,12 +73,12 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: postgres
-                key: POSTGRES_USER
+                key: username
           - name: POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: postgres
-                key: POSTGRES_PASSWORD
+                key: password
         volumeMounts:
         - name: config
           subPath: "postgres"
@@ -43,7 +86,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: config-pvc
+          claimName: postgres
 
 status: {}
 ---
@@ -57,7 +100,7 @@ metadata:
   name: postgres
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.81.4.6
+  loadBalancerIP: 10.1.250.6
   externalTrafficPolicy: Local
   ports:
   - port: 5432
@@ -94,10 +137,16 @@ spec:
         name: pgadmin4
         resources: {}
         env:
-        - name: PGADMIN_DEFAULT_EMAIL
-          value: "bryan@gonnella.dev"
-        - name: PGADMIN_DEFAULT_PASSWORD
-          value: "123whatevers"
+          - name: PGADMIN_DEFAULT_EMAIL
+            valueFrom:
+              secretKeyRef:
+                name: pgadmin
+                key: username
+          - name: PGADMIN_DEFAULT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: pgadmin
+                key: password
         volumeMounts:
         - name: config
           subPath: "pgadmin"
@@ -105,7 +154,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: config-pvc
+          claimName: pgadmin
 status: {}
 ---
 apiVersion: v1
@@ -132,7 +181,7 @@ metadata:
   name: postgres-ingress
 spec:
   rules:
-  - host: postgres.k8s.jnet.lan
+  - host: postgres.k8s.bnet.lan
     http:
       paths:
       - path: /

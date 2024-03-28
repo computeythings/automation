@@ -1,3 +1,16 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: ombi
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 4Gi
+  storageClassName: longhorn-persist
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,12 +34,18 @@ spec:
         service: media
     spec:
       volumes:
-      - name: nfs
+      - name: anime
         persistentVolumeClaim:
-          claimName: nfs-pvc
+          claimName: anime-claim
+      - name: tv
+        persistentVolumeClaim:
+          claimName: tv-claim
+      - name: movies
+        persistentVolumeClaim:
+          claimName: movies-claim
       - name: config
         persistentVolumeClaim:
-          claimName: ombi-longhorn
+          claimName: ombi
       containers:
       - image: linuxserver/ombi
         name: ombi
@@ -34,8 +53,12 @@ spec:
         volumeMounts:
         - name: config
           mountPath: "/config"
-        - name: nfs
-          mountPath: "/media"
+        - name: anime
+          mountPath: "/media/anime"
+        - name: tv
+          mountPath: "/media/tv"
+        - name: movies
+          mountPath: "/media/movies"
 status: {}
 ---
 apiVersion: v1
@@ -62,7 +85,7 @@ metadata:
   name: ombi-ingress
 spec:
   rules:
-  - host: ombi.k8s.jnet.lan
+  - host: ombi.k8s.bnet.lan
     http:
       paths:
       - path: /

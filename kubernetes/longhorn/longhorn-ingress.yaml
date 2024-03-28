@@ -3,11 +3,9 @@ kind: Ingress
 metadata:
   name: ingress-controller
   namespace: longhorn-system
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
 spec:
   rules:
-    - host: longhorn.k8s.jnet.lan
+    - host: longhorn.k8s.bnet.lan
       http:
         paths:
         - path: /

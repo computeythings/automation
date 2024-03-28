@@ -1,3 +1,34 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: radarr-config.xml
+data:
+  radarr-config.xml: |-
+    <Config>
+      <BindAddress>*</BindAddress>
+      <Port>7878</Port>
+      <SslPort>9898</SslPort>
+      <EnableSsl>False</EnableSsl>
+      <LaunchBrowser>True</LaunchBrowser>
+      <ApiKey>8e9559315f5e493dae6cb4d00cced965</ApiKey>
+      <AuthenticationMethod>Forms</AuthenticationMethod>
+      <AuthenticationRequired>Enabled</AuthenticationRequired>
+      <Branch>master</Branch>
+      <LogLevel>info</LogLevel>
+      <SslCertPath></SslCertPath>
+      <SslCertPassword></SslCertPassword>
+      <UrlBase></UrlBase>
+      <InstanceName>Radarr</InstanceName>
+      <UpdateMechanism>Docker</UpdateMechanism>
+      <PostgresUser>radarr</PostgresUser>
+      <PostgresPassword>MoviePortCumberson</PostgresPassword>
+      <PostgresPort>5432</PostgresPort>
+      <PostgresHost>postgres.default.svc.cluster.local</PostgresHost>
+      <PostgresMainDb>radarr-data</PostgresMainDb>
+      <PostgresLogDb>radarr-log</PostgresLogDb>
+    </Config>
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,22 +51,30 @@ spec:
         service: media
     spec:
       volumes:
-      - name: nfs
-        persistentVolumeClaim:
-          claimName: nfs-pvc
       - name: config
+        configMap:
+          name: radarr-config.xml
+          items:
+            - key: radarr-config.xml
+              path: config.xml
+      - name: movies
         persistentVolumeClaim:
-          claimName: radarr-longhorn
+          claimName: movies-claim
+      - name: downloads
+        persistentVolumeClaim:
+          claimName: downloads-claim
       containers:
       - image: linuxserver/radarr
-        imagePullPolicy: "Always"
         name: radarr
         resources: {}
         volumeMounts:
         - name: config
-          mountPath: "/config"
-        - name: nfs
-          mountPath: "/media"
+          mountPath: "/config/config.xml"
+          subPath: "config.xml"
+        - name: movies
+          mountPath: "/media/movies"
+        - name: downloads
+          mountPath: "/downloads"
       dnsConfig:
         options:
         - name: ndots
@@ -68,7 +107,7 @@ metadata:
   name: radarr-ingress
 spec:
   rules:
-  - host: radarr.k8s.jnet.lan
+  - host: radarr.k8s.bnet.lan
     http:
       paths:
       - path: /
