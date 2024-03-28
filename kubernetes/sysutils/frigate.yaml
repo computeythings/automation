@@ -40,22 +40,20 @@ spec:
   strategy: {}
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: frigate
         service: sysutil
     spec:
       containers:
         - image: ghcr.io/blakeblackshear/frigate:stable
-        name: frigate
-        env:
-          - name: FRIGATE_RTSP_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: frigate
-                key: FRIGATE_RTSP_PASSWORD
-        resources: {}
-        volumeMounts:
+          name: frigate
+          env:
+            - name: FRIGATE_RTSP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: frigate
+                  key: FRIGATE_RTSP_PASSWORD
+      volumeMounts:
         - name: nfs
           mountPath: "/media"
         - name: config
@@ -72,7 +70,6 @@ status: {}
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: null
   labels:
     app: frigate
     service: sysutil
