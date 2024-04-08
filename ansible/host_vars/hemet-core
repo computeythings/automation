@@ -1,0 +1,36 @@
+vlan_if:
+  vlan1:
+    address: 10.1.1.1/24
+    description: DEFAULT
+  vlan100:
+    address: 10.1.0.3/29
+    description: ROUTED LINK TO FIREWALLS
+  vlan105:
+    address: 10.1.5.1/24
+    description: ADMIN USERS
+  vlan110:
+    address: 10.1.10.1/24
+    description: PHYSICAL SERVERS
+  vlan111:
+    address: 10.1.11.1/24
+    description: IPMI MANAGEMENT NETWORK
+  vlan120:
+    address: 10.1.20.1/24
+    description: VIRTUAL SERVERS
+  vlan130:
+    address: 10.1.30.1/24
+    description: CONTAINERS
+  # 140
+  #   address: 10.1.40.1/24
+  #   description: PARENTS
+  vlan150:
+    address: 10.1.50.1/24
+    description: WIRELESS ACCESS POINTS
+  # 160
+  #   address: 10.1.60.1/24
+  #   description: PRINTER
+  vlan199:
+    address: 10.1.0.253/30
+    description: TAILSCALE P2P
+
+ospf_if: vlan100

@@ -1,0 +1,55 @@
+vlans:
+  - id: 1
+    name: DEFAULT
+  - id: 10
+    name: WAN
+  - id: 100
+    name: FW_P2P
+  - id: 105
+    name: ADMIN
+  - id: 110
+    name: SERVER
+  - id: 111
+    name: IPMI
+  - id: 120
+    name: DOCKER
+  - id: 130
+    name: MEDIA
+  # - id: 140
+  #   name: PARENTS
+  - id: 150
+    name: WIRELESS
+  # - id: 160
+  #   name: PRINTER
+  - id: 199
+    name: TAILSCALE
+
+ospf:
+  router-id: "{{ vlan_if[ospf_if]['address'] }}"
+  bandwidth: 10000
+  network: 10.1.0.0/16
+  area: 1
+
+bgp:
+  local-as: 64513
+  peers:
+    - address: 10.1.10.103
+      remote-as: 64513
+      update-source: vlan110
+    - address: 10.1.10.104
+      remote-as: 64513
+      update-source: vlan110
+    - address: 10.1.10.105
+      remote-as: 64513
+      update-source: vlan110
+
+routes:
+  - source: 0.0.0.0/0
+    dest: 10.1.0.1
+    ad: 201
+  - source: 0.0.0.0/0
+    dest: 10.1.0.2
+    ad: 202
+  - source: 10.1.0.0/16
+    dest: Null0
+    ad: 1

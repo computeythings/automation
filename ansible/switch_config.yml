@@ -1,0 +1,10 @@
+---
+- name: Configure network devices
+  hosts: switches
+  gather_facts: false
+  collections: community.network.routeros
+
+  tasks:
+    - name: "Print rid"
+      ansbile.builtin.debug:
+        var: ospf
